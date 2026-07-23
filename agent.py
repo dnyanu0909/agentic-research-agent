@@ -15,10 +15,12 @@ huge framework-heavy build — easy to explain in a viva and easy to demo.
 import os
 import json
 import re
-from typing import TypedDict, List, Dict, Any
+from typing import TypedDict, List, Dict, Any, Optional
 
 from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.types import interrupt, Command
 
 from tools import TOOL_REGISTRY, TOOL_DESCRIPTIONS, write_report, _clean_report_text
 
@@ -26,6 +28,10 @@ OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "mistral")
 MAX_STEPS = 14  # safety cap so the agent can't loop forever
 
 llm = ChatOllama(model=OLLAMA_MODEL, temperature=0.2)
+
+# Module-level checkpointer — shared across all build_graph() calls so
+# thread state persists between /run-stream and /resume-stream requests.
+checkpointer = InMemorySaver()
 
 
 class AgentState(TypedDict):
@@ -36,6 +42,7 @@ class AgentState(TypedDict):
     critiqued: bool
     finished: bool
     final_message: str
+    user_approved: Optional[bool]   # None=pending, True=approved, False=rejected
 
 
 def _detect_required_count(goal: str):
@@ -263,50 +270,137 @@ def route_after_think(state: AgentState) -> str:
 
 
 def route_after_critique(state: AgentState) -> str:
-    return END if state["finished"] else "think"
+    # When critique passes, go to human review instead of straight to END
+    return "review" if state["finished"] else "think"
+
+
+def review_node(state: AgentState) -> AgentState:
+    """Pauses graph execution and waits for a human approve/reject signal.
+    Execution resumes when the /resume-stream endpoint calls
+    Command(resume={"approved": bool})."""
+    user_decision = interrupt({
+        "type": "approval_required",
+        "draft": state.get("draft_report", ""),
+        "message": "Please review the draft report before saving to disk.",
+    })
+    approved = user_decision.get("approved", False)
+    if not approved:
+        # Inject rejection feedback into history so the agent revises
+        feedback = user_decision.get(
+            "feedback",
+            "Human reviewer rejected this draft. Rewrite the report with "
+            "better structure, more detail, and accurate information.",
+        )
+        return {
+            "user_approved": False,
+            "critiqued": False,
+            "finished": False,
+            "history": list(state.get("history", [])) + [{
+                "thought": "Human review: draft rejected.",
+                "action": "critique",
+                "action_input": "",
+                "observation": feedback,
+            }],
+        }
+    return {"user_approved": True}
+
+
+def route_after_review(state: AgentState) -> str:
+    return END if state.get("user_approved") else "think"
 
 
 def build_graph():
     graph = StateGraph(AgentState)
     graph.add_node("think", think_node)
     graph.add_node("critique", critique_node)
+    graph.add_node("review", review_node)
     graph.set_entry_point("think")
     graph.add_conditional_edges("think", route_after_think, {"think": "think", "critique": "critique"})
-    graph.add_conditional_edges("critique", route_after_critique, {"think": "think", END: END})
-    return graph.compile()
+    graph.add_conditional_edges("critique", route_after_critique, {"think": "think", "review": "review"})
+    graph.add_conditional_edges("review", route_after_review, {"think": "think", END: END})
+    return graph.compile(checkpointer=checkpointer)
 
 
-def run_agent(goal: str) -> Dict[str, Any]:
+def run_agent(goal: str, thread_id: str = "default") -> Dict[str, Any]:
     app = build_graph()
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
     initial_state: AgentState = {
         "goal": goal, "history": [], "draft_report": "",
-        "step_count": 0, "critiqued": False, "finished": False, "final_message": "",
+        "step_count": 0, "critiqued": False, "finished": False,
+        "final_message": "", "user_approved": None,
     }
-    result = app.invoke(initial_state, {"recursion_limit": 50})
+    result = app.invoke(initial_state, config)
     return result
 
 
-def stream_agent(goal: str):
-    """Like run_agent, but yields each step the moment it happens instead
-    of waiting for the whole graph to finish. Used by the /run-stream
-    endpoint so the UI can show the agent thinking live."""
+def stream_agent(goal: str, thread_id: str):
+    """Like run_agent, but yields each step the moment it happens.
+    Emits {type:'step'} events live, then either {type:'approval_required'}
+    when the graph pauses at review_node, or {type:'final'} when done."""
     app = build_graph()
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
     initial_state: AgentState = {
         "goal": goal, "history": [], "draft_report": "",
-        "step_count": 0, "critiqued": False, "finished": False, "final_message": "",
+        "step_count": 0, "critiqued": False, "finished": False,
+        "final_message": "", "user_approved": None,
     }
     seen = 0
-    latest_state = initial_state
-    for latest_state in app.stream(initial_state, {"recursion_limit": 50}, stream_mode="values"):
+    latest_state: Dict[str, Any] = initial_state
+    for latest_state in app.stream(initial_state, config, stream_mode="values"):
         history = latest_state.get("history", [])
         while seen < len(history):
             yield {"type": "step", "step": history[seen]}
             seen += 1
-    yield {
-        "type": "final",
-        "report": latest_state.get("draft_report", ""),
-        "final_message": latest_state.get("final_message", ""),
-    }
+
+    # After stream ends, check if graph is suspended at an interrupt
+    graph_state = app.get_state(config)
+    if graph_state.next:  # pending nodes = interrupted
+        yield {
+            "type": "approval_required",
+            "thread_id": thread_id,
+            "draft": latest_state.get("draft_report", ""),
+        }
+    else:
+        yield {
+            "type": "final",
+            "report": latest_state.get("draft_report", ""),
+            "final_message": latest_state.get("final_message", ""),
+        }
+
+
+def resume_stream_agent(thread_id: str, approved: bool):
+    """Resume a graph suspended at review_node. Streams any new steps
+    that happen after the human decision, then emits final or another
+    approval_required if the graph was rejected and loops back."""
+    app = build_graph()
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
+    # Start seen count from where the interrupted run left off
+    current = app.get_state(config)
+    seen = len(current.values.get("history", []))
+    latest_state: Dict[str, Any] = dict(current.values)
+
+    for latest_state in app.stream(
+        Command(resume={"approved": approved}), config, stream_mode="values"
+    ):
+        history = latest_state.get("history", [])
+        while seen < len(history):
+            yield {"type": "step", "step": history[seen]}
+            seen += 1
+
+    # Check again — rejection causes another loop and possibly another interrupt
+    graph_state = app.get_state(config)
+    if graph_state.next:
+        yield {
+            "type": "approval_required",
+            "thread_id": thread_id,
+            "draft": latest_state.get("draft_report", ""),
+        }
+    else:
+        yield {
+            "type": "final",
+            "report": latest_state.get("draft_report", ""),
+            "final_message": latest_state.get("final_message", ""),
+        }
 
 
 if __name__ == "__main__":

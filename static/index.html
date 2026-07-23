@@ -109,6 +109,25 @@
   .report-body a{color:var(--cyan); text-decoration:none; border-bottom:1px dotted var(--amber-dim);}
   .report-body a:hover{color:var(--amber);}
   .report-body strong{color:#fff; font-weight:600;}
+  .approval-panel{
+    background:var(--panel); border:1px solid var(--danger);
+    border-radius:4px; padding:20px 24px; margin-top:16px; display:none;
+  }
+  .approval-panel .ap-header{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.1em;
+    color:var(--danger); text-transform:uppercase; margin:0 0 10px;
+  }
+  .approval-panel .ap-msg{
+    color:var(--text-dim); font-size:13px; margin:0 0 16px;
+  }
+  .approval-buttons{display:flex; gap:10px;}
+  .approval-buttons button{
+    flex:1; padding:10px 0; font-size:12px; letter-spacing:.06em;
+  }
+  #approveBtn{background:#2a5c3f; color:#8effc8; border:1px solid #3a8c60;}
+  #approveBtn:hover{background:#3a7c50;}
+  #rejectBtn{background:#3d1f1f; color:var(--danger); border:1px solid #6b2e2e;}
+  #rejectBtn:hover{background:#4d2828;}
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
 </style>
@@ -133,10 +152,21 @@
     <h2>Final Report</h2>
     <div class="report-body" id="reportText"></div>
   </div>
+
+  <div class="approval-panel" id="approvalPanel">
+    <div class="ap-header">● Human Review Required</div>
+    <p class="ap-msg">The agent has drafted and self-critiqued the report above. Approve to save it, or reject to send it back for revision.</p>
+    <div class="approval-buttons">
+      <button id="approveBtn" onclick="submitDecision(true)">&#10003; Approve &amp; Save</button>
+      <button id="rejectBtn" onclick="submitDecision(false)">&#10007; Reject &amp; Revise</button>
+    </div>
+  </div>
 </div>
 
 <script>
 const API_BASE = window.location.origin;
+let currentThreadId = null;
+let awaitingApproval = false;
 
 function tagFor(action){
   if(action === 'critique') return 'critique';
@@ -186,6 +216,53 @@ function renderMarkdown(md){
   return html;
 }
 
+// Shared SSE reader — used by both runAgent and submitDecision
+async function readStream(reader, status, stepCountRef){
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const reportBox = document.getElementById('reportBox');
+  const approvalPanel = document.getElementById('approvalPanel');
+
+  while(true){
+    const {value, done} = await reader.read();
+    if(done) break;
+    buffer += decoder.decode(value, {stream:true});
+    const messages = buffer.split('\n\n');
+    buffer = messages.pop();
+
+    for(const msg of messages){
+      const line = msg.split('\n').find(l => l.startsWith('data: '));
+      if(!line) continue;
+      const payload = JSON.parse(line.slice(6));
+
+      if(payload.type === 'step'){
+        stepCountRef.count++;
+        addStep(payload.step);
+        status.innerHTML = `<span class="dot"></span>Step ${stepCountRef.count} — ${tagLabel(payload.step.action)}`;
+
+      } else if(payload.type === 'approval_required'){
+        currentThreadId = payload.thread_id;
+        // Show the draft for review
+        document.getElementById('reportText').innerHTML = renderMarkdown(payload.draft);
+        reportBox.style.display = 'block';
+        approvalPanel.style.display = 'block';
+        status.innerHTML = '<span class="dot" style="background:var(--danger)"></span>Awaiting your approval…';
+        awaitingApproval = true;
+        reader.cancel();
+        return;  // exit — UI is now waiting for human input
+
+      } else if(payload.type === 'final'){
+        status.innerHTML = payload.final_message ? `Done — ${payload.final_message}` : 'Done.';
+        approvalPanel.style.display = 'none';
+        if(payload.report){
+          document.getElementById('reportText').innerHTML = renderMarkdown(payload.report);
+          reportBox.style.display = 'block';
+        }
+      }
+    }
+  }
+}
+
 async function runAgent(){
   const goal = document.getElementById('goalInput').value.trim();
   if(!goal) return;
@@ -193,53 +270,61 @@ async function runAgent(){
   const status = document.getElementById('statusLine');
   const log = document.getElementById('log');
   const reportBox = document.getElementById('reportBox');
+  const approvalPanel = document.getElementById('approvalPanel');
 
+  awaitingApproval = false;
+  currentThreadId = crypto.randomUUID();
   btn.disabled = true;
   log.innerHTML = '';
   reportBox.style.display = 'none';
-  status.innerHTML = '<span class="dot"></span>Agent is thinking...';
+  approvalPanel.style.display = 'none';
+  status.innerHTML = '<span class="dot"></span>Agent is thinking…';
 
   try{
-    const url = `${API_BASE}/run-stream?goal=${encodeURIComponent(goal)}`;
+    const url = `${API_BASE}/run-stream?goal=${encodeURIComponent(goal)}&thread_id=${currentThreadId}`;
     const res = await fetch(url);
     if(!res.ok || !res.body) throw new Error('stream failed to open');
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let stepCount = 0;
-
-    while(true){
-      const {value, done} = await reader.read();
-      if(done) break;
-      buffer += decoder.decode(value, {stream:true});
-
-      const messages = buffer.split('\n\n');
-      buffer = messages.pop();
-
-      for(const msg of messages){
-        const line = msg.split('\n').find(l => l.startsWith('data: '));
-        if(!line) continue;
-        const payload = JSON.parse(line.slice(6));
-
-        if(payload.type === 'step'){
-          stepCount++;
-          addStep(payload.step);
-          status.innerHTML = `<span class="dot"></span>Step ${stepCount} — ${tagLabel(payload.step.action)}`;
-        } else if(payload.type === 'final'){
-          status.innerHTML = payload.final_message ? `Done — ${payload.final_message}` : 'Done.';
-          if(payload.report){
-            document.getElementById('reportText').innerHTML = renderMarkdown(payload.report);
-            reportBox.style.display = 'block';
-          }
-        }
-      }
-    }
+    const stepCountRef = {count: 0};
+    await readStream(res.body.getReader(), status, stepCountRef);
   }catch(err){
     status.textContent = 'Error: could not reach the agent backend. Is uvicorn running?';
     console.error(err);
   }finally{
-    btn.disabled = false;
+    if(!awaitingApproval) btn.disabled = false;
+  }
+}
+
+async function submitDecision(approved){
+  const btn = document.getElementById('runBtn');
+  const status = document.getElementById('statusLine');
+  const approvalPanel = document.getElementById('approvalPanel');
+  const reportBox = document.getElementById('reportBox');
+
+  approvalPanel.style.display = 'none';
+  awaitingApproval = false;
+
+  if(!approved){
+    // Clear the rejected draft so the agent can write a fresh one
+    document.getElementById('reportText').innerHTML = '';
+    reportBox.style.display = 'none';
+  }
+
+  status.innerHTML = `<span class="dot"></span>${approved ? 'Approved — saving report…' : 'Rejected — agent is revising…'}`;
+
+  try{
+    const res = await fetch(`${API_BASE}/resume-stream`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({thread_id: currentThreadId, approved}),
+    });
+    if(!res.ok || !res.body) throw new Error('resume stream failed');
+    const stepCountRef = {count: 0};
+    await readStream(res.body.getReader(), status, stepCountRef);
+  }catch(err){
+    status.textContent = 'Error resuming agent.';
+    console.error(err);
+  }finally{
+    if(!awaitingApproval) btn.disabled = false;
   }
 }
 
