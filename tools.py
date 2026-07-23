@@ -52,6 +52,27 @@ def _wikipedia_fallback(query: str) -> str:
         return ""
 
 
+_STOPWORDS = {"and", "the", "for", "about", "of", "in", "a", "an", "to",
+              "is", "are", "was", "were", "on", "at", "by", "with", "how"}
+
+
+def _filter_relevant_results(results: list, query: str) -> list:
+    """Drop results whose title+body share no meaningful keywords with
+    the query, preventing the model from receiving and hallucinating
+    off completely unrelated pages (e.g. BCCI for 'commerce')."""
+    query_keywords = (
+        set(re.findall(r'\w+', query.lower())) - _STOPWORDS
+    )
+    if not query_keywords:
+        return results
+    filtered = []
+    for r in results:
+        haystack = (r.get("title", "") + " " + r.get("body", "")).lower()
+        if any(kw in haystack for kw in query_keywords):
+            filtered.append(r)
+    return filtered if filtered else results  # fall back to all if everything got dropped
+
+
 def web_search(query: str, max_results: int = 5) -> str:
     """Search the web; retries across backends on rate limits, falls
     back to Wikipedia if all of them fail."""
@@ -67,6 +88,7 @@ def web_search(query: str, max_results: int = 5) -> str:
                 with DDGS() as ddgs:
                     results = list(ddgs.text(query, max_results=max_results, backend=backend))
                 if results:
+                    results = _filter_relevant_results(results, query)
                     lines = []
                     for i, r in enumerate(results, 1):
                         title = r.get("title", "")
@@ -94,6 +116,18 @@ def web_search(query: str, max_results: int = 5) -> str:
               f"search was unavailable.")
     _SEARCH_CACHE[query] = result
     return result
+
+
+def _clean_report_text(text: str) -> str:
+    """Strips outer backticks and code-fence tags that local LLMs
+    sometimes wrap around their write_report output."""
+    # Remove leading ```markdown, ```md, ``` etc.
+    text = re.sub(r'^\s*```[a-zA-Z]*\n?', '', text)
+    # Remove trailing ```
+    text = re.sub(r'\n?\s*```\s*$', '', text)
+    # Catch any remaining standalone fence lines
+    text = re.sub(r'```', '', text)
+    return text.strip()
 
 
 # --- Safe calculator (no eval()) ---------------------------------------
@@ -130,6 +164,7 @@ def calculator(expression: str) -> str:
 def write_report(filename: str, content: str) -> str:
     """Write the final report/content to a text file in the reports/
     folder and return the path it was saved to."""
+    content = _clean_report_text(content)
     safe_name = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", filename)
     if not safe_name.endswith(".md"):
         safe_name += ".md"

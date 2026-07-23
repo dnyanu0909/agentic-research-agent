@@ -20,7 +20,7 @@ from typing import TypedDict, List, Dict, Any
 from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, END
 
-from tools import TOOL_REGISTRY, TOOL_DESCRIPTIONS, write_report
+from tools import TOOL_REGISTRY, TOOL_DESCRIPTIONS, write_report, _clean_report_text
 
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "mistral")
 MAX_STEPS = 14  # safety cap so the agent can't loop forever
@@ -194,7 +194,7 @@ def think_node(state: AgentState) -> AgentState:
         else:
             filename, content = "report.md", action_input
         observation = write_report(filename.strip(), content.strip())
-        state["draft_report"] = content.strip()
+        state["draft_report"] = _clean_report_text(content.strip())
     elif action in TOOL_REGISTRY:
         observation = TOOL_REGISTRY[action](action_input)
     else:
@@ -227,13 +227,15 @@ def critique_node(state: AgentState) -> AgentState:
 
     prompt = (
         f"Goal: {state['goal']}\n\nDraft report:\n{state['draft_report']}\n\n"
-        "Check these things: (1) Does this report fully and accurately "
-        "address the goal? (2) Does it follow the required structure — a "
-        "'# Title', a '## Summary', clearly separated '##' sections per "
-        "sub-topic written in full sentences (not raw copied snippets), "
-        f"and a '## Sources' list?{count_note} "
-        "Reply with ONLY 'GOOD' if all are true, or a short specific "
-        "instruction for what to fix if not."
+        "Critique criteria:\n"
+        "1. Format: Is it formatted cleanly without code fences or raw backticks?\n"
+        "2. Fact Check: Does it contain obvious historical errors or non-sensical claims "
+        "(e.g. historical institutions like BCCI using modern AI)?\n"
+        f"3. Structure: If the goal requests a specific number of items, "
+        f"are there distinct, fully described sections for each item, rather than "
+        f"placeholder or generic sections like 'Other Applications'?{count_note}\n\n"
+        "Reply ONLY with 'GOOD' if all criteria pass. Otherwise, provide a brief "
+        "1-sentence fix instruction for the writer."
     )
     verdict = llm.invoke(prompt).content.strip()
     state["critiqued"] = True
