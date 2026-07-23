@@ -128,6 +128,12 @@
   #approveBtn:hover{background:#3a7c50;}
   #rejectBtn{background:#3d1f1f; color:var(--danger); border:1px solid #6b2e2e;}
   #rejectBtn:hover{background:#4d2828;}
+  #draftPreview{
+    background:#0a0f0e; border:1px solid var(--line); border-radius:3px;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-dim);
+    line-height:1.6; padding:12px 14px; margin:0 0 16px;
+    max-height:220px; overflow-y:auto; white-space:pre-wrap; word-break:break-word;
+  }
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
 </style>
@@ -153,12 +159,13 @@
     <div class="report-body" id="reportText"></div>
   </div>
 
-  <div class="approval-panel" id="approvalPanel">
-    <div class="ap-header">● Human Review Required</div>
-    <p class="ap-msg">The agent has drafted and self-critiqued the report above. Approve to save it, or reject to send it back for revision.</p>
+  <div class="approval-panel" id="reviewCard">
+    <div class="ap-header">&#9679; Human Review Required</div>
+    <p class="ap-msg">The agent has drafted and self-critiqued the report above. Review the raw draft below, then approve to save or reject to revise.</p>
+    <pre id="draftPreview"></pre>
     <div class="approval-buttons">
-      <button id="approveBtn" onclick="submitDecision(true)">&#10003; Approve &amp; Save</button>
-      <button id="rejectBtn" onclick="submitDecision(false)">&#10007; Reject &amp; Revise</button>
+      <button id="approveBtn">&#10003; Approve &amp; Save</button>
+      <button id="rejectBtn">&#10007; Reject &amp; Revise</button>
     </div>
   </div>
 </div>
@@ -216,12 +223,44 @@ function renderMarkdown(md){
   return html;
 }
 
-// Shared SSE reader — used by both runAgent and submitDecision
+// Named helper — matches the API surface from Part 3 spec
+async function sendResumeSignal(threadId, approved){
+  const status = document.getElementById('statusLine');
+  const reviewCard = document.getElementById('reviewCard');
+  const reportBox  = document.getElementById('reportBox');
+
+  reviewCard.style.display = 'none';
+  awaitingApproval = false;
+
+  if(!approved){
+    document.getElementById('reportText').innerHTML = '';
+    reportBox.style.display = 'none';
+  }
+
+  status.innerHTML = `<span class="dot"></span>${approved ? 'Approved — saving report…' : 'Rejected — agent is revising…'}`;
+
+  try{
+    const res = await fetch(`${API_BASE}/resume-stream`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({thread_id: threadId, approved}),
+    });
+    if(!res.ok || !res.body) throw new Error('resume stream failed');
+    await readStream(res.body.getReader(), status, {count: 0});
+  }catch(err){
+    status.textContent = 'Error resuming agent.';
+    console.error(err);
+  }finally{
+    if(!awaitingApproval) document.getElementById('runBtn').disabled = false;
+  }
+}
+
+// Shared SSE reader — used by both runAgent and sendResumeSignal
 async function readStream(reader, status, stepCountRef){
   const decoder = new TextDecoder();
   let buffer = '';
-  const reportBox = document.getElementById('reportBox');
-  const approvalPanel = document.getElementById('approvalPanel');
+  const reportBox  = document.getElementById('reportBox');
+  const reviewCard = document.getElementById('reviewCard');
 
   while(true){
     const {value, done} = await reader.read();
@@ -240,20 +279,36 @@ async function readStream(reader, status, stepCountRef){
         addStep(payload.step);
         status.innerHTML = `<span class="dot"></span>Step ${stepCountRef.count} — ${tagLabel(payload.step.action)}`;
 
-      } else if(payload.type === 'approval_required'){
+      // Handle both 'approval_required' (backend) and 'interrupt' (Part 3 alias)
+      } else if(payload.type === 'approval_required' || payload.type === 'interrupt'){
         currentThreadId = payload.thread_id;
-        // Show the draft for review
+        status.innerHTML = '<strong>Waiting for Human Approval...</strong>';
+
+        // Populate the rendered report preview
         document.getElementById('reportText').innerHTML = renderMarkdown(payload.draft);
         reportBox.style.display = 'block';
-        approvalPanel.style.display = 'block';
-        status.innerHTML = '<span class="dot" style="background:var(--danger)"></span>Awaiting your approval…';
+
+        // Populate the raw draftPreview panel
+        document.getElementById('draftPreview').innerText = payload.draft;
+        reviewCard.style.display = 'block';
+
+        // Bind action buttons dynamically (matches Part 3 pattern)
+        document.getElementById('approveBtn').onclick = async () => {
+          reviewCard.style.display = 'none';
+          await sendResumeSignal(currentThreadId, true);
+        };
+        document.getElementById('rejectBtn').onclick = async () => {
+          reviewCard.style.display = 'none';
+          await sendResumeSignal(currentThreadId, false);
+        };
+
         awaitingApproval = true;
         reader.cancel();
-        return;  // exit — UI is now waiting for human input
+        return;  // pause here — waiting for human input
 
       } else if(payload.type === 'final'){
         status.innerHTML = payload.final_message ? `Done — ${payload.final_message}` : 'Done.';
-        approvalPanel.style.display = 'none';
+        reviewCard.style.display = 'none';
         if(payload.report){
           document.getElementById('reportText').innerHTML = renderMarkdown(payload.report);
           reportBox.style.display = 'block';
@@ -266,26 +321,25 @@ async function readStream(reader, status, stepCountRef){
 async function runAgent(){
   const goal = document.getElementById('goalInput').value.trim();
   if(!goal) return;
-  const btn = document.getElementById('runBtn');
+  const btn    = document.getElementById('runBtn');
   const status = document.getElementById('statusLine');
-  const log = document.getElementById('log');
-  const reportBox = document.getElementById('reportBox');
-  const approvalPanel = document.getElementById('approvalPanel');
+  const log    = document.getElementById('log');
+  const reportBox  = document.getElementById('reportBox');
+  const reviewCard = document.getElementById('reviewCard');
 
   awaitingApproval = false;
-  currentThreadId = crypto.randomUUID();
+  currentThreadId  = crypto.randomUUID();
   btn.disabled = true;
   log.innerHTML = '';
   reportBox.style.display = 'none';
-  approvalPanel.style.display = 'none';
+  reviewCard.style.display = 'none';
   status.innerHTML = '<span class="dot"></span>Agent is thinking…';
 
   try{
     const url = `${API_BASE}/run-stream?goal=${encodeURIComponent(goal)}&thread_id=${currentThreadId}`;
     const res = await fetch(url);
     if(!res.ok || !res.body) throw new Error('stream failed to open');
-    const stepCountRef = {count: 0};
-    await readStream(res.body.getReader(), status, stepCountRef);
+    await readStream(res.body.getReader(), status, {count: 0});
   }catch(err){
     status.textContent = 'Error: could not reach the agent backend. Is uvicorn running?';
     console.error(err);
@@ -294,38 +348,9 @@ async function runAgent(){
   }
 }
 
+// submitDecision kept as alias for backwards-compat with any direct calls
 async function submitDecision(approved){
-  const btn = document.getElementById('runBtn');
-  const status = document.getElementById('statusLine');
-  const approvalPanel = document.getElementById('approvalPanel');
-  const reportBox = document.getElementById('reportBox');
-
-  approvalPanel.style.display = 'none';
-  awaitingApproval = false;
-
-  if(!approved){
-    // Clear the rejected draft so the agent can write a fresh one
-    document.getElementById('reportText').innerHTML = '';
-    reportBox.style.display = 'none';
-  }
-
-  status.innerHTML = `<span class="dot"></span>${approved ? 'Approved — saving report…' : 'Rejected — agent is revising…'}`;
-
-  try{
-    const res = await fetch(`${API_BASE}/resume-stream`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({thread_id: currentThreadId, approved}),
-    });
-    if(!res.ok || !res.body) throw new Error('resume stream failed');
-    const stepCountRef = {count: 0};
-    await readStream(res.body.getReader(), status, stepCountRef);
-  }catch(err){
-    status.textContent = 'Error resuming agent.';
-    console.error(err);
-  }finally{
-    if(!awaitingApproval) btn.disabled = false;
-  }
+  await sendResumeSignal(currentThreadId, approved);
 }
 
 document.getElementById('goalInput').addEventListener('keydown', e => {
