@@ -1,87 +1,54 @@
-# Autonomous Research & Report Agent
+# Autonomous Local Deep Research Agent
 
-An agentic AI system that takes a research goal, plans its own steps,
-calls tools (web search, calculator, file writer) to gather information,
-writes a report, then **critiques and revises its own output** before
-returning it — all running locally on Ollama, no paid API needed.
+An autonomous, stateful deep research agent powered by **LangGraph**, local **Ollama** LLMs, **FastAPI** Server-Sent Events (SSE) streaming, and **Human-in-the-Loop (HITL)** governance.
 
-## Why this counts as "agentic AI"
-- **Planning**: the agent decides its own next action at each step, it isn't a fixed pipeline.
-- **Tool use**: it calls real tools (web search, calculator, file writer) and reacts to their output.
-- **Autonomy**: it loops (Think → Act → Observe) until it decides the goal is met.
-- **Self-improvement**: before finishing, it critiques its own draft report against the goal and revises if it falls short.
+Runs 100% locally with zero cloud API dependencies, complete data privacy, and zero token costs.
 
-## Architecture
+---
 
-```
- goal
-   │
-   ▼
-┌─────────┐   tool call    ┌──────────────┐
-│  think  │ ─────────────▶ │ web_search    │
-│ (LLM    │                │ calculator    │
-│ decides │ ◀───────────── │ write_report  │
-│ action) │   observation  └──────────────┘
-└────┬────┘
-     │ loops until action="finish" or max steps
-     ▼
-┌───────────┐
-│ critique  │──▶ if gaps found, loop back to "think" with feedback
-│ (self-    │
-│  check)   │──▶ if good, END and return report
-└───────────┘
-```
+## 📋 Overview
 
-Built with **LangGraph** (`agent.py`) as a small 2-node state graph, a
-**FastAPI** backend (`main.py`), and a plain HTML/JS terminal-style
-frontend (`static/index.html`) — no framework build step needed.
+Standard AI research agents heavily rely on third-party cloud APIs, introducing data privacy risks, high per-token costs, and frequent context hallucinations when web search results contain keyword false positives. 
 
-## Setup
+This project delivers a **privacy-first, zero-cost alternative**. It executes multi-step web research, filters false-positive search context via deterministic keyword overlap algorithms, sanitizes formatting artifacts, performs strict self-critique, and pauses execution for human approval before saving generated reports to disk.
 
-1. **Install Ollama** (if you haven't): https://ollama.com
-2. **Pull a model** (small + fast recommended for laptop demos):
-   ```bash
-   ollama pull llama3.1
-   # or a smaller/faster option:
-   ollama pull qwen2.5:7b
-   ```
-3. **Install Python deps**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate   # Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-4. **Run the server**:
-   ```bash
-   uvicorn main:app --reload
-   ```
-5. Open **http://127.0.0.1:8000** in your browser and enter a goal, e.g.:
-   > "Research the current state of agentic AI and summarize 3 real-world use cases"
+---
 
-Reports are also saved as `.md` files in the `reports/` folder.
+## 🔑 Key Features
 
-To use a different local model: `set OLLAMA_MODEL=qwen2.5:7b` (or `export` on Mac/Linux) before running uvicorn.
+* **Zero-API-Cost Infrastructure:** Runs entirely on local open-weights models via Ollama (`mistral`).
+* **Deterministic Search Relevance Filtering:** Drops irrelevant web search snippets using non-stopword keyword matching before LLM context ingestion to prevent context hallucinations.
+* **Output Sanitization Engine:** Automatically strips raw markdown code fences (` ```markdown ` / ` ``` `) across state updates and disk I/O layers.
+* **Multi-Criteria Self-Critique:** Reflects on draft reports to enforce clean formatting, anachronism detection/fact-checking, and exact structural requirements (e.g., item counts).
+* **Human-in-the-Loop (HITL) Interrupts:** Uses LangGraph state interruption (`interrupt()`) to pause execution after self-critique, streaming an interactive review card to the browser UI for approval or rejection.
+* **Real-Time Event Streaming:** Streams live ReAct thinking logs and report previews over FastAPI Server-Sent Events (SSE).
+* **Containerized Deployment:** Fully orchestrated via Docker Compose for single-command startup.
 
-## 4-Day Build Plan (mapped to this repo)
+---
 
-**Day 1 — Setup + understand the architecture**
-- Install Ollama, pull a model, run `python agent.py "test goal"` from the terminal to confirm the loop works before touching the UI.
-- Read through `agent.py` line by line — be ready to explain the think/act/critique loop in the viva.
+## 🛠️ Tech Stack
 
-**Day 2 — Get the core loop solid**
-- Run 4-5 different goals through `agent.py` directly. Fix prompt issues if the model outputs bad JSON (tweak `SYSTEM_PROMPT` in `agent.py` if needed — smaller models sometimes need firmer instructions).
-- Confirm `web_search`, `calculator`, and `write_report` all work individually (`python -c "from tools import web_search; print(web_search('test'))"`).
+* **Backend Framework:** Python 3.11, FastAPI, Uvicorn, Pydantic
+* **Agentic State Machine:** LangGraph, LangChain-Ollama
+* **Local Inference Runtime:** Ollama (Mistral 7B)
+* **Containerization:** Docker, Docker Compose
+* **Frontend UI:** HTML5, Vanilla JavaScript (Fetch ReadableStream API), Tailwind CSS
 
-**Day 3 — Wire up the UI + the self-improvement step**
-- Start the server, test the full flow through the browser.
-- Verify the critique loop actually triggers a revision at least once during testing (try a vague goal to force it) — this is your strongest "agentic" talking point in the demo.
+---
 
-**Day 4 — Polish + submission prep**
-- Write 2-3 example goals into your report/slides with screenshots of the mission log.
-- Note any limitations honestly (small local models are less reliable at JSON output than GPT-4-class models — mention this as a real trade-off you evaluated, it reads well in a viva).
-- Prepare the architecture diagram above for your slides.
+## 📂 Project Architecture & Workflow
 
-## Known limitations (mention these — they show understanding, not weakness)
-- Local models are smaller than GPT-4-class models, so JSON parsing occasionally fails; the agent retries automatically but isn't perfect.
-- `MAX_STEPS` in `agent.py` caps the loop at 6 steps to guarantee termination — a real production agent would use a smarter stopping condition.
-- Web search uses DuckDuckGo's free endpoint, which is unofficial and can rate-limit under heavy use.
+```text
+[ think_node ] ──> (Deterministic Search Filter) ──> [ critique_node ]
+                                                            │
+                                                     (Passes Rules)
+                                                            │
+                                                            ▼
+                                                [ review_node (interrupt) ]
+                                                            │
+                                            ┌───────────────┴───────────────┐
+                                      (Approved)                       (Rejected)
+                                            │                               │
+                                            ▼                               ▼
+                                     [ write_report ]               [ think_node ]
+                                  (Saves report to disk)         (Revises with feedback)
