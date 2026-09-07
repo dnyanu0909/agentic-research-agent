@@ -47,24 +47,35 @@ Most "AI" apps are fixed pipelines: prompt in → answer out. This project is di
 
 ## ⚡ Quick Start
 
+### 🌐 Try It Instantly (Cloud Demo)
+
+No setup or local installation required:
+
+👉 **[Launch Live Web App](https://agentic-research-agent-six.vercel.app)**
+
+---
+
+### 💻 Run Locally
+
 > **Prerequisites:** [Python 3.11+](https://python.org) and [Ollama](https://ollama.com) installed and running.
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/dnyanu0909/agentic-research-agent.git
+git clone [https://github.com/dnyanu0909/agentic-research-agent.git](https://github.com/dnyanu0909/agentic-research-agent.git)
 cd agentic-research-agent
 
 # 2. Pull a local model (one-time)
 ollama pull mistral
 
 # 3. Install Python dependencies & start the server
-python -m venv venv && venv\Scripts\activate   # Windows
-# source venv/bin/activate                      # macOS / Linux
+python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # macOS / Linux
 pip install -r requirements.txt
 uvicorn main:app --reload
 
 # 4. Open your browser 🎉
-#    http://127.0.0.1:8000
+#    [http://127.0.0.1:8000](http://127.0.0.1:8000)
 ```
 
 Enter a research goal and watch the agent work in real time.
