@@ -9,12 +9,13 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-black?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel&logoColor=white)](https://agentic-research-agent-six.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/dnyanu0909/agentic-research-agent/ci.yml?style=for-the-badge&label=CI)](https://github.com/dnyanu0909/agentic-research-agent/actions)
 
 <br/>
 
-[🎬 Demo](#-demo) · [⚡ Quick Start](#-quick-start) · [🏗️ Architecture](#️-architecture) · [📡 API Reference](#-api-reference) · [🐳 Docker](#-docker-setup) · [🤝 Contributing](#-contributing)
+[🚀 Live Demo](https://agentic-research-agent-six.vercel.app) · [🎬 UI Preview](#-demo) · [⚡ Quick Start](#-quick-start) · [🏗️ Architecture](#️-architecture) · [📡 API Reference](#-api-reference) · [🐳 Docker](#-docker-setup) · [🤝 Contributing](#-contributing)
 
 </div>
 
