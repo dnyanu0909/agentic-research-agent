@@ -11,19 +11,15 @@ NOTE: web_search and wikipedia_lookup make real HTTP calls, so they are
       skipped in CI (set SKIP_NETWORK_TESTS=1 to skip them locally too).
 """
 
-import os
-import pytest
-
 from tools import (
-    calculator,
-    write_report,
     _clean_report_text,
     _filter_relevant_results,
-    OUTPUT_DIR,
+    calculator,
+    write_report,
 )
 
-
 # ─── calculator ─────────────────────────────────────────────────────────────
+
 
 class TestCalculator:
     def test_addition(self):
@@ -67,6 +63,7 @@ class TestCalculator:
 
 # ─── _clean_report_text ──────────────────────────────────────────────────────
 
+
 class TestCleanReportText:
     def test_strips_markdown_fence(self):
         raw = "```markdown\n# Title\n\nContent\n```"
@@ -91,6 +88,7 @@ class TestCleanReportText:
 
 
 # ─── _filter_relevant_results ────────────────────────────────────────────────
+
 
 class TestFilterRelevantResults:
     def test_keeps_relevant_results(self):
@@ -120,6 +118,7 @@ class TestFilterRelevantResults:
 
 
 # ─── write_report ────────────────────────────────────────────────────────────
+
 
 class TestWriteReport:
     def test_creates_file(self, tmp_path, monkeypatch):

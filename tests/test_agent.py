@@ -6,20 +6,19 @@ run cleanly in CI.  They verify the graph structure and API endpoints are
 wired up correctly without performing any real LLM inference.
 """
 
-import json
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-
 # ─── FastAPI endpoint smoke tests ────────────────────────────────────────────
+
 
 class TestAPIEndpoints:
     """Tests the FastAPI app endpoints without a real Ollama connection."""
 
     def _get_client(self):
         from main import app
+
         return TestClient(app)
 
     def test_health_endpoint(self):
@@ -64,11 +63,13 @@ class TestAPIEndpoints:
 
 # ─── Agent graph structure tests ─────────────────────────────────────────────
 
+
 class TestAgentGraph:
     """Tests the LangGraph graph is compiled correctly without LLM calls."""
 
     def test_build_graph_returns_compiled_graph(self):
         from agent import build_graph
+
         graph = build_graph()
         # The compiled graph should have an invoke method
         assert hasattr(graph, "invoke")
@@ -78,10 +79,16 @@ class TestAgentGraph:
     def test_agent_state_keys(self):
         """AgentState TypedDict should have all required keys."""
         from agent import AgentState
+
         required_keys = {
-            "goal", "history", "draft_report",
-            "step_count", "critiqued", "finished",
-            "final_message", "user_approved",
+            "goal",
+            "history",
+            "draft_report",
+            "step_count",
+            "critiqued",
+            "finished",
+            "final_message",
+            "user_approved",
         }
         # TypedDict stores annotations in __annotations__
         assert required_keys.issubset(set(AgentState.__annotations__.keys()))
@@ -89,9 +96,11 @@ class TestAgentGraph:
 
 # ─── _detect_required_count ─────────────────────────────────────────────────
 
+
 class TestDetectRequiredCount:
     def test_detects_count_in_goal(self):
         from agent import _detect_required_count
+
         count, noun = _detect_required_count(
             "Research the current state of agentic AI and summarize 3 real-world use cases"
         )
@@ -100,11 +109,13 @@ class TestDetectRequiredCount:
 
     def test_returns_none_for_no_count(self):
         from agent import _detect_required_count
+
         count, noun = _detect_required_count("Research agentic AI trends")
         assert count is None
         assert noun is None
 
     def test_ignores_count_over_10(self):
         from agent import _detect_required_count
+
         count, noun = _detect_required_count("List 50 examples of X")
         assert count is None

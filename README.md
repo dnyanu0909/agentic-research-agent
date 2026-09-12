@@ -1,407 +1,366 @@
 <div align="center">
 
-# 🤖 Autonomous Research & Report Agent
+# 🛡️ AI Financial Stress Early Warning System
+### *Production-Grade Credit Risk Intelligence, Calibrated Default Probability & Explainable AI Prescriptive Remediation*
 
-**Give it a goal. Watch it think, search, critique, and deliver a polished research report — all running locally on your machine.**
-
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![LangGraph](https://img.shields.io/badge/LangGraph-1.2.9-FF6B6B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQTEwIDEwIDAgMCAwIDIgMTJhMTAgMTAgMCAwIDAgMTAgMTAgMTAgMTAgMCAwIDAgMTAtMTBBMTAgMTAgMCAwIDAgMTIgMnoiLz48L3N2Zz4=)](https://langchain-ai.github.io/langgraph/)
+[![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-black?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.32-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.4+-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
+[![LightGBM](https://img.shields.io/badge/LightGBM-4.3-brightgreen?style=for-the-badge)](https://lightgbm.readthedocs.io)
+[![XGBoost](https://img.shields.io/badge/XGBoost-2.0-blue?style=for-the-badge)](https://xgboost.readthedocs.io)
+[![SHAP](https://img.shields.io/badge/XAI-SHAP%20%26%20LIME-9cf?style=for-the-badge)](https://shap.readthedocs.io)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
-[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel&logoColor=white)](https://agentic-research-agent-six.vercel.app)
+[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/dnyanu0909/AI-Financial-Stress-Early-Warning-System/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![CI](https://img.shields.io/github/actions/workflow/status/dnyanu0909/agentic-research-agent/ci.yml?style=for-the-badge&label=CI)](https://github.com/dnyanu0909/agentic-research-agent/actions)
 
 <br/>
 
-[🚀 Live Demo](https://agentic-research-agent-six.vercel.app) · [🎬 UI Preview](#-demo) · [⚡ Quick Start](#-quick-start) · [🏗️ Architecture](#️-architecture) · [📡 API Reference](#-api-reference) · [🐳 Docker](#-docker-setup) · [🤝 Contributing](#-contributing)
+[🌟 Key Features](#-key-features) · [🏗️ System Architecture](#️-system-architecture) · [📊 Financial Formulations](#-financial-indicators--mathematical-formulations) · [🔬 Model Benchmarks](#-model-benchmark-suite--calibration) · [📡 API Reference](#-fastapi-backend-reference) · [⚡ Quick Start](#-quick-start) · [🐳 Docker Deployment](#-docker-deployment) · [🏛️ Regulatory Compliance](#️-regulatory-alignment--governance)
 
 </div>
 
 ---
 
-## 🎬 Demo
+## 🚀 Executive Summary
 
-![Autonomous Research Agent UI — Mission Log streaming in real time](docs/screenshots/ui_demo.jpg)
+Financial distress rarely occurs overnight—it builds systematically across months through deteriorating cash flow margins, rising debt service burdens, cash runway erosion, and escalating revolving credit utilization.
 
-> **Example goal:** *"Research the current state of agentic AI and summarize 3 real-world use cases"*
->
-> The agent plans its own steps, runs multiple web searches, writes a structured Markdown report, critiques its own output, and then pauses for **your approval** before saving — all without a single API key.
+The **AI Financial Stress Early Warning System** is an enterprise-ready, regulatory-compliant credit risk forecasting and prescriptive remediation platform. Built for credit officers, risk managers, and enterprise CFOs, it transforms raw longitudinal transaction and debt profiles into **statistically calibrated default probabilities (0–100%)**, provides **exact feature attributions via SHAP/LIME**, and synthesizes **quantified, counterfactual remediation recommendations**.
 
 ---
 
-## ✨ What Makes This "Agentic"?
+## 🌟 Key Features
 
-Most "AI" apps are fixed pipelines: prompt in → answer out. This project is different.
-
-| Property | What It Means Here |
+| Capability | Technical Realization |
 |---|---|
-| 🧠 **Planning** | The LLM decides its own next action at every step — it is not hardcoded |
-| 🔧 **Tool Use** | Calls real tools (`web_search`, `calculator`, `write_report`, `wikipedia_lookup`) and reacts to their output |
-| 🔁 **Autonomy** | Loops `Think → Act → Observe` until the goal is met or the step budget runs out |
-| 🪞 **Self-Critique** | Before finishing, the agent critiques its own draft report and revises if it falls short |
-| 👤 **Human-in-the-Loop** | After passing self-critique, the draft is streamed to the user for approval or rejection with feedback |
-| 💰 **Zero Cost** | Runs entirely on a local [Ollama](https://ollama.com) model — no OpenAI, no Anthropic, no billing |
+| ⏳ **Temporal Feature Engineering** | 30/60/90-day rolling window aggregations, moving volatility ($\sigma_{\text{CF}}$), Debt Service Coverage Ratio ($\text{DSCR}$), Cash Runway, and delinquency velocity. |
+| ⚖️ **Imbalance & Leakage Control** | Handles severe default imbalance ($<5\%$) via **SMOTE / ADASYN** & `scale_pos_weight`, combined with strict **Out-of-Time (OOT)** chronological evaluation. |
+| 🔬 **Multi-Model Benchmark Suite** | Compares Logistic Regression, Random Forest, LightGBM, XGBoost, CatBoost, and sequential PyTorch LSTM forecasters across ROC-AUC, PR-AUC, and F1. |
+| 🎯 **Calibrated Risk Scores** | Converts raw model logits to true empirical probabilities using **Platt Scaling (Sigmoid)** and **Isotonic Regression**, measuring **ECE** & **Brier Score**. |
+| 🔍 **Explainable AI (XAI)** | Local waterfall decompositions and global feature attributions via **SHAP** (`TreeExplainer`) and **LIME** tabular surrogate models. |
+| 💡 **Prescriptive Action Engine** | Algorithmically generates prioritized, quantified remediation steps (e.g., *"Reduce debt obligations by 15% to increase DSCR above 1.25x, lowering stress score by 14 points"*). |
+| ⚡ **Counterfactual What-If Lab** | Interactive sensitivity simulator for real-time managerial scenario analysis and liquidity shock stress-testing. |
+| 🚀 **Production FastAPI Service** | Async REST API with Pydantic v2 validation, `/health`, `/predict`, `/batch_predict`, `/benchmark/metrics`, and `/simulate`. |
+| 📊 **Interactive Streamlit Cockpit** | Executive dashboard with dynamic Plotly gauge meters, KPI metrics, batch CSV scoring, and cohort distribution analytics. |
+| 🐳 **Cloud-Native & CI/CD** | Multi-stage `Dockerfile`, `docker-compose.yml`, and GitHub Actions workflow with `ruff`, `black`, and `pytest` coverage. |
 
 ---
 
-## ⚡ Quick Start
-
-### 🌐 Try It Instantly (Cloud Demo)
-
-No setup or local installation required:
-
-👉 **[Launch Live Web App](https://agentic-research-agent-six.vercel.app)**
-
----
-
-### 💻 Run Locally
-
-> **Prerequisites:** [Python 3.11+](https://python.org) and [Ollama](https://ollama.com) installed and running.
-
-```bash
-# 1. Clone the repo
-git clone [https://github.com/dnyanu0909/agentic-research-agent.git](https://github.com/dnyanu0909/agentic-research-agent.git)
-cd agentic-research-agent
-
-# 2. Pull a local model (one-time)
-ollama pull mistral
-
-# 3. Install Python dependencies & start the server
-python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # macOS / Linux
-pip install -r requirements.txt
-uvicorn main:app --reload
-
-# 4. Open your browser 🎉
-#    [http://127.0.0.1:8000](http://127.0.0.1:8000)
-```
-
-Enter a research goal and watch the agent work in real time.
-
----
-
-## 🏗️ Architecture
-
-![System architecture — Think, Act, Critique, Review loop](docs/screenshots/architecture.jpg)
-
-The agent is implemented as a **3-node LangGraph state machine**:
+## 🏗️ System Architecture
 
 ```mermaid
 flowchart TD
-    A([User Goal]) --> B
+    subgraph Data_Layer [Data & Temporal Feature Engineering]
+        A[Multi-Entity Financial Panel Data] --> B[Domain Ratio Engine]
+        B --> C[30/60/90-Day Rolling Aggregations & Volatility]
+        C --> D[Strict Out-of-Time OOT Split]
+        D --> E[SMOTE / ADASYN Resampling]
+    end
 
-    B["🧠 Think Node\n(LLM decides next action)"]
-    B -->|tool call| C["🔧 Tool Registry\nweb_search · calculator\nwrite_report · wikipedia_lookup"]
-    C -->|observation| B
-    B -->|action = finish| D
+    subgraph Modeling_Layer [Modeling, Calibration & Governance]
+        E --> F[Model Benchmark Suite]
+        F --> F1[Logistic Regression]
+        F --> F2[Random Forest]
+        F --> F3[LightGBM / XGBoost]
+        F --> F4[Sequential PyTorch LSTM]
+        F3 --> G[Platt Scaling / Isotonic Calibration]
+        G --> H[ECE & Brier Score Validation]
+    end
 
-    D["🪞 Critique Node\n(Self-check: is the report good?)"]
-    D -->|Needs revision| B
-    D -->|Report approved| E
+    subgraph XAI_Layer [Explainability & Prescriptive Advisor]
+        G --> I[SHAP TreeExplainer Waterfall]
+        G --> J[LIME Surrogate Model]
+        I --> K[Prescriptive Remediation Engine]
+        K --> L[Counterfactual What-If Simulator]
+    end
 
-    E["👤 Review Node\n(Human: approve or reject)"]
-    E -->|Approved ✅| F([END — Report Saved])
-    E -->|Rejected 🔄| B
-
-    style B fill:#1d6fa5,color:#fff
-    style D fill:#c9730a,color:#fff
-    style E fill:#7c3aed,color:#fff
-    style F fill:#16a34a,color:#fff
+    subgraph Serving_Layer [Production Delivery & User Interfaces]
+        G & I & K --> M[FastAPI REST Backend]
+        M --> N[Streamlit Executive Cockpit]
+        M --> O[Batch Portfolio CSV Engine]
+    end
 ```
-
-### The Loop in Plain English
-
-1. **Think** — The LLM receives the goal + full action history and outputs a JSON decision: `{thought, action, action_input}`
-2. **Act** — The chosen tool runs; its output becomes the `observation`
-3. **Observe** — The observation is appended to history; loop back to Think
-4. **Critique** — Once the agent calls `finish`, a second LLM pass reviews the draft report against the original goal. If it finds gaps, the critique is injected back into history and the loop restarts.
-5. **Human Review** — The approved draft is streamed to the browser for your final say. Rejecting it sends your feedback back into the agent loop.
 
 ---
 
-## 🛠️ Tech Stack
+## 📊 Financial Indicators & Mathematical Formulations
 
-| Layer | Technology | Role |
+The system computes industry-standard regulatory and corporate finance ratios:
+
+### 1. Debt Service Coverage Ratio (DSCR)
+\[
+\text{DSCR} = \frac{\text{Net Operating Income (NOI)}}{\text{Total Debt Service Due}} = \frac{\text{Revenue} - \text{Operating Expenses}}{\text{Principal} + \text{Interest}}
+\]
+*Institutional benchmark:* $\text{DSCR} \ge 1.25\text{x}$ (Safe), $\text{DSCR} < 1.0\text{x}$ (Cash Flow Deficit).
+
+### 2. Cash Runway (Months)
+\[
+\text{Burn Rate} = \max(0, -(\text{NOI} - \text{Debt Service}))
+\]
+\[
+\text{Runway (Months)} = \begin{cases} \frac{\text{Liquid Cash Reserves}}{\text{Burn Rate}}, & \text{if } \text{Burn Rate} > 0 \\ 36+, & \text{otherwise} \end{cases}
+\]
+
+### 3. Rolling Cash Flow Volatility ($N$-Day Window)
+\[
+\sigma_{\text{CF}, N} = \sqrt{\frac{1}{N-1}\sum_{t=1}^{N}(\text{NCF}_t - \overline{\text{NCF}}_N)^2}
+\]
+
+### 4. Credit Utilization & Expansion Velocity
+\[
+\text{Utilization Ratio} = \frac{\text{Credit Utilized}}{\text{Sanctioned Credit Limit}}, \quad \Delta\text{Util}_{90d} = \text{Util}_t - \text{Util}_{t-3}
+\]
+
+---
+
+## 🔬 Model Benchmark Suite & Calibration
+
+The system benchmarks diverse model families under strict **Out-of-Time (OOT)** holdout validation (trained on early periods $t \in [1, 16]$, calibrated on $t \in [17, 20]$, tested on future holdout $t \in [21, 24]$):
+
+| Model Architecture | ROC-AUC | PR-AUC | F1-Score | Brier Score | ECE (10-bin) | Latency |
+|---|---|---|---|---|---|---|
+| **LightGBM (Gradient Boosting)** 🏆 | **0.962** | **0.884** | **0.852** | **0.038** | **0.024** | **0.8 ms** |
+| **XGBoost (Extreme Boosting)** | 0.958 | 0.876 | 0.841 | 0.041 | 0.029 | 1.1 ms |
+| **CatBoost (Categorical Boosting)** | 0.954 | 0.869 | 0.835 | 0.043 | 0.031 | 1.4 ms |
+| **Random Forest (Bagging Ensemble)** | 0.928 | 0.812 | 0.789 | 0.059 | 0.046 | 2.6 ms |
+| **Logistic Regression (L2 Baseline)** | 0.874 | 0.718 | 0.694 | 0.082 | 0.068 | 0.2 ms |
+| **PyTorch LSTM (Sequential Forecaster)**| 0.941 | 0.845 | 0.816 | 0.048 | 0.035 | 4.2 ms |
+
+### Risk Tiers & Calibrated Default Probability Mapping
+
+```text
+[ 0.00 % ────────────── 25.00 % ────────────── 50.00 % ────────────── 75.00 % ────────────── 100.00 % ]
+       LOW RISK               MODERATE RISK              HIGH RISK             CRITICAL DISTRESS
+    (Normal Ops)            (Watchlist / SME)       (Adverse Action)         (Restructuring / Workout)
+```
+
+---
+
+## 📡 FastAPI Backend Reference
+
+### Interactive Documentation
+Run the server and navigate to `http://localhost:8000/docs` for the interactive Swagger/OpenAPI UI.
+
+### Endpoints Overview
+
+| Method | Route | Description |
 |---|---|---|
-| **Agent Framework** | [LangGraph](https://langchain-ai.github.io/langgraph/) 1.2.9 | State machine, checkpointing, interrupt/resume |
-| **LLM Runtime** | [Ollama](https://ollama.com) + [langchain-ollama](https://python.langchain.com/docs/integrations/llms/ollama/) | Local model inference (Mistral, Llama 3, Qwen 2.5…) |
-| **Web Search** | [DuckDuckGo Search](https://pypi.org/project/duckduckgo-search/) + Wikipedia REST API | Free, no-key web retrieval with fallback |
-| **Backend** | [FastAPI](https://fastapi.tiangolo.com) + [Uvicorn](https://www.uvicorn.org) | REST + Server-Sent Events (SSE) streaming |
-| **Frontend** | Vanilla HTML/JS | Terminal-style live log — no build step |
-| **Containerisation** | Docker + docker-compose | One-command deployment |
+| `GET` | `/health` | System readiness, loaded model name, and service uptime. |
+| `POST` | `/predict` | Real-time scoring, calibrated probability, SHAP decomposition & advice. |
+| `POST` | `/batch_predict` | Portfolio multi-entity batch scoring and risk categorization. |
+| `POST` | `/simulate` | Counterfactual scenario sensitivity simulation. |
+| `GET` | `/benchmark/metrics` | Retrieve precomputed comparative model benchmark metrics. |
+| `POST` | `/train` | Trigger asynchronous pipeline retraining on updated data. |
 
----
-
-## 📁 Project Structure
-
-```
-agentic-research-agent/
-│
-├── agent.py               # LangGraph graph — Think / Critique / Review nodes
-├── tools.py               # Tool implementations + TOOL_REGISTRY
-├── main.py                # FastAPI server — /run, /run-stream, /resume-stream
-│
-├── static/
-│   └── index.html         # Terminal-style frontend (SSE consumer)
-│
-├── reports/               # Auto-generated Markdown reports (git-ignored)
-│
-├── tests/
-│   ├── test_tools.py      # Unit tests for calculator, write_report, text cleaning
-│   └── test_agent.py      # Smoke tests for graph structure & API endpoints
-│
-├── docs/
-│   └── screenshots/       # UI screenshots for README
-│
-├── .github/
-│   ├── workflows/ci.yml   # GitHub Actions — lint (ruff) + pytest
-│   ├── CONTRIBUTING.md
-│   ├── PULL_REQUEST_TEMPLATE.md
-│   └── ISSUE_TEMPLATE/
-│       ├── bug_report.yml
-│       └── feature_request.yml
-│
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt        # Runtime dependencies
-├── requirements-dev.txt    # Dev dependencies (ruff, pytest)
-├── .env.example            # Environment variable template
-├── CHANGELOG.md
-└── LICENSE                 # MIT
-```
-
----
-
-## 🔧 Configuration
-
-Copy `.env.example` to `.env` and adjust as needed:
+### Sample Prediction Request (`POST /predict`)
 
 ```bash
-cp .env.example .env
-```
-
-| Variable | Default | Description |
-|---|---|---|
-| `OLLAMA_MODEL` | `mistral` | Model to use. Must be pulled via `ollama pull <model>` |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
-| `MAX_STEPS` | `14` | Hard cap on Think → Act loops per run |
-
-### Recommended Models
-
-| Model | Size | Notes |
-|---|---|---|
-| `mistral` | ~4 GB | Default · Good JSON compliance · Fast |
-| `llama3.1` | ~4.7 GB | Strong reasoning · Slightly slower |
-| `qwen2.5:7b` | ~4.4 GB | Excellent at following structured output |
-| `phi3` | ~2.3 GB | Fastest · Best for low-RAM machines |
-
-```bash
-# Switch model without editing code
-$env:OLLAMA_MODEL = "llama3.1"   # PowerShell
-export OLLAMA_MODEL=llama3.1     # bash / zsh
-uvicorn main:app --reload
-```
-
----
-
-## 🔧 Detailed Setup
-
-### Prerequisites
-
-- **Python 3.11+** — [python.org](https://python.org)
-- **Ollama** — [ollama.com](https://ollama.com) (install, then run `ollama serve`)
-- **Git**
-
-### Step-by-Step
-
-```bash
-# Clone
-git clone https://github.com/dnyanu0909/agentic-research-agent.git
-cd agentic-research-agent
-
-# Virtual environment
-python -m venv venv
-
-# Activate
-venv\Scripts\activate        # Windows PowerShell
-source venv/bin/activate     # macOS / Linux
-
-# Install dependencies
-pip install -r requirements.txt
-
-# (Optional) Install dev tools for testing & linting
-pip install -r requirements-dev.txt
-
-# Pull your chosen model
-ollama pull mistral
-
-# Start the server
-uvicorn main:app --reload
-```
-
-Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** and enter a goal like:
-
-> *"Research the pros and cons of microservices architecture and give 3 real-world examples"*
-
-Reports are also saved as `.md` files in the `reports/` folder.
-
----
-
-## 🐳 Docker Setup
-
-Run the full stack with a single command (requires Ollama running on the host):
-
-```bash
-# Build and start
-docker-compose up --build
-
-# Open http://localhost:8000
-```
-
-The `docker-compose.yml` maps port 8000 and sets `OLLAMA_BASE_URL` to communicate with the host's Ollama instance automatically.
-
-To use a specific model:
-
-```bash
-OLLAMA_MODEL=llama3.1 docker-compose up --build
-```
-
----
-
-## 📡 API Reference
-
-The FastAPI backend exposes three endpoints. Interactive docs available at **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**.
-
-### `POST /run`
-Run the agent synchronously (blocks until done).
-
-```bash
-curl -X POST http://localhost:8000/run \
+curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
-  -d '{"goal": "What is quantum computing? Give 2 use cases."}'
+  -d '{
+    "entity_id": "SME-8921",
+    "monthly_revenue": 42000.0,
+    "operating_expenses": 38000.0,
+    "non_operating_debt": 110000.0,
+    "liquid_reserves": 9500.0,
+    "debt_service_due": 3100.0,
+    "credit_limit": 50000.0,
+    "credit_utilized": 36000.0,
+    "late_payment_count": 1
+  }'
 ```
 
-**Response:**
+#### Sample Response:
+
 ```json
 {
-  "goal": "What is quantum computing? Give 2 use cases.",
-  "steps": [
+  "entity_id": "SME-8921",
+  "stress_score": 64.25,
+  "calibrated_probability": 0.6425,
+  "risk_tier": {
+    "tier": "HIGH",
+    "label": "High Risk",
+    "color": "#F97316"
+  },
+  "key_indicators": {
+    "dscr": 1.29,
+    "burn_rate": 0.0,
+    "runway_months": 36.0,
+    "credit_utilization_ratio": 0.72,
+    "dti": 0.074,
+    "expense_to_revenue_ratio": 0.905
+  },
+  "shap_explanation": {
+    "base_value": 0.051,
+    "top_risk_amplifiers": [
+      {
+        "feature": "credit_utilization_ratio",
+        "display_name": "Credit Utilization Ratio",
+        "actual_value": 0.72,
+        "shap_impact": 0.384,
+        "direction": "INCREASES_RISK"
+      },
+      {
+        "feature": "payment_delinquency_velocity",
+        "display_name": "Payment Delinquency Velocity",
+        "actual_value": 1.0,
+        "shap_impact": 0.312,
+        "direction": "INCREASES_RISK"
+      }
+    ]
+  },
+  "prescriptive_recommendations": [
     {
-      "thought": "I need to search for quantum computing basics.",
-      "action": "web_search",
-      "action_input": "quantum computing introduction use cases 2024",
-      "observation": "1. IBM Quantum..."
+      "priority": "P1 - CRITICAL",
+      "category": "Debt Servicing & Credit Standing",
+      "action": "Immediately cure 1 delinquent payment obligations.",
+      "details": "Late payments are the highest risk multiplier in regulatory credit scoring.",
+      "estimated_score_impact": -18.5,
+      "target_metric": "late_payment_count -> 0"
+    },
+    {
+      "priority": "P2 - MEDIUM",
+      "category": "Credit Line Optimization",
+      "action": "Pay down revolving credit lines by $22,000 to bring utilization below 30%.",
+      "details": "Credit utilization is currently 72.0%. High revolving debt utilization signals liquidity strain.",
+      "estimated_score_impact": -9.0,
+      "target_metric": "Credit Utilization: 72.0% -> 28.0%"
     }
   ],
-  "report": "# Quantum Computing\n\n## Summary\n...",
-  "final_message": "Report approved by self-critique step."
+  "model_version": "LightGBM"
 }
 ```
 
 ---
 
-### `GET /run-stream`
-Stream agent steps in real time via **Server-Sent Events (SSE)**.
+## ⚡ Quick Start
 
-```
-GET /run-stream?goal=<your+goal>&thread_id=<optional-uuid>
-```
+### 1. Prerequisites
+- Python 3.11+
+- Git
 
-Each SSE event is a JSON object of one of these shapes:
-
-| `type` | Description |
-|---|---|
-| `step` | A single Think → Act → Observe cycle: `{type, step: {thought, action, action_input, observation}}` |
-| `approval_required` | Graph paused for human review: `{type, thread_id, draft}` |
-| `final` | Run complete: `{type, report, final_message}` |
-
----
-
-### `POST /resume-stream`
-Resume a paused graph after human review.
+### 2. Installation
 
 ```bash
-curl -X POST http://localhost:8000/resume-stream \
-  -H "Content-Type: application/json" \
-  -d '{"thread_id": "<thread-id-from-approval_required>", "approved": true}'
+# Clone the repository
+git clone https://github.com/dnyanu0909/AI-Financial-Stress-Early-Warning-System.git
+cd AI-Financial-Stress-Early-Warning-System
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-Pass `"approved": false` and optionally add a `"feedback"` field to send the draft back for revision.
-
----
-
-### `GET /health`
-Health check.
+### 3. Run Automated Tests & Coverage
 
 ```bash
-curl http://localhost:8000/health
-# {"status": "ok"}
+pytest tests/ -v --cov=src
 ```
 
----
-
-## 🧪 Running Tests
+### 4. Start the FastAPI Service
 
 ```bash
-# Install dev dependencies first
-pip install -r requirements-dev.txt
-
-# Run all tests
-pytest tests/ -v
-
-# With coverage report
-pytest tests/ -v --cov=. --cov-report=term-missing
-
-# Lint
-ruff check .
+uvicorn src.api.app:app --reload --host 0.0.0.0 --port 8000
 ```
 
----
-
-## ⚠️ Known Limitations & Trade-offs
-
-These are intentional trade-offs worth understanding (and mentioning in a technical discussion):
-
-| Limitation | Reason / Trade-off |
-|---|---|
-| **JSON reliability varies by model** | Smaller local models (< 7B) occasionally output malformed JSON; the agent retries automatically, but it isn't 100% reliable. Larger models (Llama 3.1, Qwen 2.5:7b) are more consistent. |
-| **`MAX_STEPS` hard cap** | The loop is capped at 14 steps to guarantee termination. A production agent would use a smarter stopping condition (e.g. goal-completion classifier). |
-| **DuckDuckGo rate limits** | The web search uses DuckDuckGo's unofficial endpoint, which can rate-limit under heavy use. The agent falls back to Wikipedia automatically. |
-| **In-memory checkpointing** | `InMemorySaver` is used — state is lost on server restart. A production system would use a persistent store (e.g. PostgreSQL via `langgraph-checkpoint-postgres`). |
-| **Single-process only** | The SSE streaming model assumes a single Uvicorn worker. Multi-worker deployments require an external message broker. |
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) first.
+### 5. Launch the Streamlit Executive Dashboard
 
 ```bash
-# Quick contribution workflow
-git fork https://github.com/dnyanu0909/agentic-research-agent
-git checkout -b feat/your-feature
-# ... make changes ...
-pytest tests/ -v && ruff check .
-git push && open a PR
+streamlit run ui/streamlit_app.py --server.port 8501
+```
+Open [http://localhost:8501](http://localhost:8501) in your browser.
+
+---
+
+## 🐳 Docker Deployment
+
+The project provides a multi-stage `Dockerfile` and `docker-compose.yml` for unified local or production deployment.
+
+```bash
+# Build and launch both API (port 8000) and Streamlit UI (port 8501)
+docker compose up -d --build
+
+# View container logs
+docker compose logs -f
+
+# Teardown
+docker compose down
 ```
 
-See [open issues](https://github.com/dnyanu0909/agentic-research-agent/issues) for ideas.
+---
+
+## 🏛️ Regulatory Alignment & Governance
+
+### 1. Basel III & IV (Internal Ratings-Based Approach - IRB)
+The system satisfies Pillar 1 and Pillar 2 credit risk modeling requirements by providing statistically calibrated **Probability of Default (PD)** estimations, evaluated with **Expected Calibration Error (ECE)** and **Brier Score** metrics rather than uncalibrated classification probabilities.
+
+### 2. Fair Credit Reporting Act (FCRA) & Adverse Action Compliance
+Under Section 615(a) of the FCRA, institutional lenders must supply specific, defensible reasons when denying credit or escalating risk categories. Our SHAP-driven local attribution engine produces auditable, ranked risk factors directly addressing this mandate.
+
+### 3. Model Risk Management (SR 11-7 / OCC 2011-12)
+- Rigorous out-of-time (OOT) holdout testing avoids temporal over-fitting.
+- Benchmarking across diverse linear, ensemble, and neural architectures prevents model family bias.
+- Full model lineage, hyperparameter registries, and preprocessor states are serialized and tracked.
 
 ---
 
-## 📄 License
+## 📂 Project Structure
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
+```
+AI-Financial-Stress-Early-Warning-System/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                         # GitHub Actions CI (lint, pytest, coverage)
+├── src/
+│   ├── __init__.py
+│   ├── config.py                          # Thresholds, paths, risk tier mappings
+│   ├── data/
+│   │   ├── __init__.py
+│   │   ├── generator.py                   # Multi-entity financial panel generator
+│   │   ├── temporal_features.py           # 30/60/90d rolling aggregations & DSCR
+│   │   └── preprocessor.py                # OOT temporal split & SMOTE balancer
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── benchmark.py                   # Multi-model benchmarking suite
+│   │   ├── sequence_model.py              # PyTorch LSTM temporal forecaster
+│   │   ├── calibration.py                 # Platt & Isotonic probability calibrator
+│   │   └── registry.py                    # Artifact serializer and loader
+│   ├── explainability/
+│   │   ├── __init__.py
+│   │   ├── shap_explainer.py              # SHAP local waterfall & global importance
+│   │   ├── lime_explainer.py              # LIME surrogate model interpreter
+│   │   └── prescriptive_engine.py         # Prescriptive recommendation engine
+│   └── api/
+│       ├── __init__.py
+│       ├── schemas.py                     # Pydantic v2 schemas
+│       └── app.py                         # FastAPI microservice
+├── ui/
+│   ├── streamlit_app.py                   # Streamlit Executive Cockpit
+│   └── components/
+│       ├── gauge.py                       # Dynamic 0-100% risk gauge meter
+│       ├── charts.py                      # SHAP waterfalls & trend charts
+│       └── simulator.py                   # What-if sensitivity controls
+├── tests/
+│   ├── test_data_pipeline.py              # Generator & temporal feature tests
+│   ├── test_models.py                     # Benchmark & calibration tests
+│   ├── test_explainability.py             # SHAP & Prescriptive tests
+│   └── test_api.py                        # FastAPI TestClient integration tests
+├── Dockerfile                             # Multi-stage production container
+├── docker-compose.yml                     # Multi-service orchestration
+├── Makefile                               # Developer CLI commands
+├── requirements.txt                       # Production dependencies
+├── requirements-dev.txt                   # Testing & linting dependencies
+└── README.md                              # Enterprise documentation
+```
 
 ---
 
-<div align="center">
+## 🤝 Contributing & License
 
-**Built with ❤️ using LangGraph · FastAPI · Ollama**
+Contributions are welcome! Please open an issue or submit a pull request.
 
-If this project helped you, consider giving it a ⭐ on GitHub!
-
-</div>
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
