@@ -1,15 +1,12 @@
 """
 Autonomous Research & Report Agent
 -----------------------------------
-A ReAct-style agent built with LangGraph, running entirely on a local
-Ollama model (no API keys, no cost).
+Uses Groq (cloud, fast, free) when GROQ_API_KEY is set in the environment,
+otherwise falls back to a local Ollama model.
 
 Loop:  Think -> Act (call a tool) -> Observe -> Think again ... -> Finish
 Self-check: before finishing, the agent critiques its own draft report
 against the original goal and revises once if it falls short.
-
-This is intentionally a small, readable graph (3 nodes) rather than a
-huge framework-heavy build — easy to explain in a viva and easy to demo.
 """
 
 import os
@@ -17,17 +14,29 @@ import json
 import re
 from typing import TypedDict, List, Dict, Any, Optional
 
-from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import interrupt, Command
 
 from tools import TOOL_REGISTRY, TOOL_DESCRIPTIONS, write_report, _clean_report_text
 
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "mistral")
-MAX_STEPS = 14  # safety cap so the agent can't loop forever
+# ── LLM selection ────────────────────────────────────────────────────────────
+# Set GROQ_API_KEY env var to use Groq (fast cloud inference, free tier).
+# Without it the agent falls back to local Ollama (slow on CPU, fine with GPU).
+GROQ_API_KEY  = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL    = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
+OLLAMA_MODEL  = os.environ.get("OLLAMA_MODEL", "mistral")
 
-llm = ChatOllama(model=OLLAMA_MODEL, temperature=0.2)
+if GROQ_API_KEY:
+    from langchain_groq import ChatGroq
+    llm = ChatGroq(api_key=GROQ_API_KEY, model=GROQ_MODEL, temperature=0.2)
+    print(f"[LLM] Using Groq → {GROQ_MODEL}")
+else:
+    from langchain_ollama import ChatOllama
+    llm = ChatOllama(model=OLLAMA_MODEL, temperature=0.2)
+    print(f"[LLM] Using Ollama → {OLLAMA_MODEL}  (set GROQ_API_KEY for faster inference)")
+
+MAX_STEPS = 10  # reduced from 14 — keeps total runtime under 2 min on Groq
 
 # Module-level checkpointer — shared across all build_graph() calls so
 # thread state persists between /run-stream and /resume-stream requests.
